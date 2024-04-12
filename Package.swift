@@ -9,14 +9,19 @@ let package = Package(
     dependencies: [
         // 💧 A server-side Swift web framework.
         .package(url: "https://github.com/vapor/vapor.git", from: "4.92.4"),
+        .package(url: "https://github.com/vapor/fluent-mongo-driver.git", from: "1.0.0")
     ],
     targets: [
         .executableTarget(
             name: "App",
             dependencies: [
                 .product(name: "Vapor", package: "vapor"),
+                .product(name: "FluentMongoDriver", package: "fluent-mongo-driver")
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: [
+                // Enable better optimizations when compiling in Release mode.
+                .unsafeFlags(["-cross-module-optimization"], .when(configuration: .release))
+            ]
         ),
         .testTarget(
             name: "AppTests",
