@@ -8,7 +8,13 @@ public func configure(_ app: Application) async throws {
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     // register routes
     
-    try app.databases.use(.mongo(connectionString: "mongodb+srv://chiranjeev:9WTvudM6RVPmmUrU@cluster0.nuvdgiu.mongodb.net/wealthos?retryWrites=true&w=majority&appName=Cluster0"), as: .mongo)
+    guard let MONGO_URI = Environment.get("MONGO_URI") else {
+        throw Abort(.internalServerError)
+    }
+    
+    try app.databases.use(.mongo(connectionString: MONGO_URI), as: .mongo)
+    
+    try app.register(collection: UserController())
     
     try routes(app)
 }
