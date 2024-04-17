@@ -39,3 +39,8 @@ final class User: Model, Content {
     }
     
 }
+
+struct LoginRequest: Codable {
+    let email: String
+    let password: String
+}

@@ -16,5 +16,7 @@ public func configure(_ app: Application) async throws {
     
     try app.register(collection: UserController())
     
+    app.passwords.use(.bcrypt(cost: 8))
+    
     try routes(app)
 }

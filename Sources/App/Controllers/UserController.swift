@@ -19,6 +19,7 @@ class UserController: RouteCollection {
         api.post("user", use: createUser)
         api.get("user", use: getAll)
         api.get("user", ":userId", use: getById)
+        api.post("user", "login", use: login)
     }
     
     func getById(req: Request) async throws -> User {
@@ -39,10 +40,29 @@ class UserController: RouteCollection {
     
     func createUser(req: Request) async throws -> User {
         let user = try req.content.decode(User.self)
+        let hashedPassword = try await req.password.async.hash(user.password)
+        
+        user.password = hashedPassword
             
         try await user.save(on: req.db)
         
         return user
+    }
+    
+    func login(req: Request) async throws -> User {
+        let requestedUser = try req.content.decode(LoginRequest.self)
+        
+        guard let user = try await User.query(on: req.db).filter(\.$email == requestedUser.email).first() else {
+            throw Abort(.notFound, reason: "User not found")
+        }
+        
+        let verify = try await req.password.async.verify(requestedUser.password, created: user.password)
+       
+        if verify {
+            return user
+        } else {
+            throw Abort(.unauthorized, reason: "Invalid credentials")
+        }
     }
     
 }
