@@ -1,6 +1,7 @@
 import Vapor
 import Fluent
 import FluentMongoDriver
+import JWT
 
 // configures your application
 public func configure(_ app: Application) async throws {
@@ -17,6 +18,7 @@ public func configure(_ app: Application) async throws {
     try app.register(collection: UserController())
     
     app.passwords.use(.bcrypt(cost: 8))
+    app.jwt.signers.use(.hs256(key: "secret"))
     
     try routes(app)
 }

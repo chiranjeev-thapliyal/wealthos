@@ -49,7 +49,7 @@ class UserController: RouteCollection {
         return user
     }
     
-    func login(req: Request) async throws -> User {
+    func login(req: Request) async throws -> LoginResponse {
         let requestedUser = try req.content.decode(LoginRequest.self)
         
         guard let user = try await User.query(on: req.db).filter(\.$email == requestedUser.email).first() else {
@@ -59,7 +59,12 @@ class UserController: RouteCollection {
         let verify = try await req.password.async.verify(requestedUser.password, created: user.password)
        
         if verify {
-            return user
+            
+            let payload = TestPayload(subject: "accessToken", expiration: .init(value: .distantFuture), data: PublicUserInfo(name: user.name, email: user.email))
+            let token = try req.jwt.sign(payload)
+            let response = LoginResponse(name: user.name, email: user.email, token: token)
+            
+            return response
         } else {
             throw Abort(.unauthorized, reason: "Invalid credentials")
         }

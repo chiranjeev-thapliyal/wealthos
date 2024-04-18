@@ -44,3 +44,26 @@ struct LoginRequest: Codable {
     let email: String
     let password: String
 }
+
+class PublicUserInfo: Codable {
+    let name: String
+    let email: String
+    
+    init(name: String, email: String) {
+        self.name = name
+        self.email = email
+    }
+}
+
+class LoginResponse: Codable {
+    let name: String
+    let email: String
+    let token: String
+    
+    init(name: String, email: String, token: String) {
+        self.name = name
+        self.email = email
+        self.token = token
+    }
+    
+}
