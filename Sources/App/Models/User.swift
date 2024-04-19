@@ -55,7 +55,7 @@ class PublicUserInfo: Codable {
     }
 }
 
-class LoginResponse: Codable {
+final class LoginResponse: Codable, Content {
     let name: String
     let email: String
     let token: String

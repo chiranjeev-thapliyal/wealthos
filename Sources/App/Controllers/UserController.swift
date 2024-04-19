@@ -57,9 +57,8 @@ class UserController: RouteCollection {
         }
         
         let verify = try await req.password.async.verify(requestedUser.password, created: user.password)
-       
+        
         if verify {
-            
             let payload = TestPayload(subject: "accessToken", expiration: .init(value: .distantFuture), data: PublicUserInfo(name: user.name, email: user.email))
             let token = try req.jwt.sign(payload)
             let response = LoginResponse(name: user.name, email: user.email, token: token)
