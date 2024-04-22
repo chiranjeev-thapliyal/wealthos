@@ -20,6 +20,7 @@ class UserController: RouteCollection {
         api.get("user", use: getAll)
         api.get("user", ":userId", use: getById)
         api.post("user", "login", use: login)
+        api.get("transactions", ":userId", use: getUserTransactions)
     }
     
     func getById(req: Request) async throws -> User {
@@ -67,6 +68,11 @@ class UserController: RouteCollection {
         } else {
             throw Abort(.unauthorized, reason: "Invalid credentials")
         }
+    }
+    
+    func getUserTransactions(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        return response
     }
     
 }
