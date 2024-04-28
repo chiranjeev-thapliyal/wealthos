@@ -14,7 +14,7 @@ import FluentMongoDriver
 class UserController: RouteCollection {
     
     func boot(routes: any RoutesBuilder) throws {
-        let api = routes.grouped("api", "v1")
+        let api = routes
         
         api.post("user", use: createUser)
         api.get("user", use: getAll)
