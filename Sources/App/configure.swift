@@ -16,6 +16,7 @@ public func configure(_ app: Application) async throws {
     try app.databases.use(.mongo(connectionString: MONGO_URI), as: .mongo)
     
     try app.register(collection: UserController())
+    try app.register(collection: TransactionController())
     
     app.passwords.use(.bcrypt(cost: 8))
     app.jwt.signers.use(.hs256(key: "secret"))

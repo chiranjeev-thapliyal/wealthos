@@ -13,7 +13,7 @@ final class User: Model, Content {
     static let schema = "users"
     
     // Unique identifier for this User.
-    @ID(key: .id)
+    @ID(custom: .id, generatedBy: .database)
     var id: UUID?
     
     // The User's name.
@@ -73,5 +73,5 @@ final class LoginResponse: Codable, Content {
         self.email = email
         self.token = token
     }
-    
 }
+
