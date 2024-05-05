@@ -28,6 +28,10 @@ final class User: Model, Content {
     @Field(key: "password")
     var password: String
     
+    // User Friends
+    @Field(key: "friends")
+    var friends: [UUID]
+    
     init() { }
 
     // Creates a new User with all properties set.
@@ -38,6 +42,10 @@ final class User: Model, Content {
         self.password = password
     }
     
+}
+
+struct FriendRequest: Content {
+    let friendId: UUID
 }
 
 struct LoginRequest: Codable {

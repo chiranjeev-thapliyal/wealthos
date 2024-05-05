@@ -21,6 +21,8 @@ class UserController: RouteCollection {
         api.get("user", ":userId", use: getById)
         api.post("user", "login", use: login)
         api.get("transactions", ":userId", use: getUserTransactions)
+        api.get("user", ":userId", "friends", use: getUserFriends)
+        api.post("users", ":userId", "friends", "add", use: addUserFriend)
     }
     
     func getById(req: Request) async throws -> User {
@@ -72,6 +74,56 @@ class UserController: RouteCollection {
     
     func getUserTransactions(req: Request) async throws -> Response {
         let response = Response(status: .ok)
+        return response
+    }
+    
+    func addUserFriend(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        
+        guard let userId = req.parameters.get("userId", as: UUID.self) else {
+            throw Abort(.badRequest, reason: "Invalid userId")
+        }
+        
+        let friendRequest = try req.content.decode(FriendRequest.self)
+        
+        guard let user = try await User.find(userId, on: req.db) else {
+            throw Abort(.notFound, reason: "User not found")
+        }
+        
+        guard friendRequest.friendId != userId,
+                let _ = try await User.find(friendRequest.friendId, on: req.db) else {
+            throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
+        }
+        
+        if !user.friends.contains(friendRequest.friendId){
+            user.friends.append(friendRequest.friendId)
+            try await user.save(on: req.db)
+        }
+        
+        return response
+    }
+    
+    
+    func getUserFriends(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        
+        guard let userId = req.parameters.get("userId", as: UUID.self) else {
+            throw Abort(.badRequest, reason: "Invalid userId")
+        }
+        
+        guard let user = try await User.find(userId, on: req.db) else {
+            throw Abort(.notFound, reason: "User not found")
+        }
+        
+        guard !user.friends.isEmpty else {
+            response.body = .empty
+            return response
+        }
+        
+        let friends = try await User.query(on: req.db).filter(\.$id ~~ user.friends).all()
+        
+        try response.content.encode(friends)
+        
         return response
     }
     
