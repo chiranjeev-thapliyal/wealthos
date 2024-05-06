@@ -41,14 +41,48 @@ class UserController: RouteCollection {
         return try await User.query(on: req.db).all()
     }
     
-    func createUser(req: Request) async throws -> User {
-        let user = try req.content.decode(User.self)
+    func createUser(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
         
-        user.password = try await req.password.async.hash(user.password)
+        do {
+            let user = try req.content.decode(User.self)
             
-        try await user.save(on: req.db)
+            if try await User.query(on: req.db).filter(\.$email == user.email).first() != nil {
+                throw Abort(.badRequest, reason: "A user with the same email already exists.")
+            }
+            
+            if try await User.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first() != nil {
+                throw Abort(.badRequest, reason: "A user with the same phone number already exists.")
+            }
+            
+            user.password = try await req.password.async.hash(user.password)
+                
+            try await user.save(on: req.db)
+            
+            let payload = TestPayload(subject: "accessToken", expiration: .init(value: .distantFuture), data: PublicUserInfo(name: user.name, email: user.email))
+            let token = try req.jwt.sign(payload)
+            let responseData = LoginResponse(name: user.name, email: user.email, token: token)
+            
+            try response.content.encode(responseData)
+            
+            return response
+        } catch let error as DecodingError {
+            response.status = .badRequest
+            let errorResponse = ErrorResponse(error: true, reason: "Decoding Error: \(error.localizedDescription)")
+            try response.content.encode(errorResponse)
+            return response
+        } catch let error as AbortError {
+            response.status = error.status
+            let errorResponse = ErrorResponse(error: true, reason: error.reason)
+            try response.content.encode(errorResponse)
+            return response
+        } catch {
+            response.status = .internalServerError
+            let errorResponse = ErrorResponse(error: true, reason: "Internal Server Error: \(error.localizedDescription)")
+            try response.content.encode(errorResponse)
+            return response
+        }
         
-        return user
     }
     
     func login(req: Request) async throws -> LoginResponse {

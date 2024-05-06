@@ -18,6 +18,9 @@ final class User: Model, Content {
     @Field(key: "name")
     var name: String
     
+    @Field(key: "phoneNumber")
+    var phoneNumber: String
+    
     @Field(key: "email")
     var email: String
     
@@ -29,9 +32,10 @@ final class User: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, name: String, email: String, password: String, friends: [Friend]? = nil) {
+    init(id: UUID? = nil, name: String, phoneNumber: String, email: String, password: String, friends: [Friend]? = nil) {
         self.id = id
         self.name = name
+        self.phoneNumber = phoneNumber
         self.email = email
         self.password = password
         self.friends = friends
