@@ -90,16 +90,21 @@ class UserController: RouteCollection {
         }
         
         guard friend.id != userId,
-                let _ = try await User.find(friend.id, on: req.db) else {
+                let foundFriend = try await User.find(friend.id, on: req.db) else {
             throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
+        }
+        
+        if ((user.friends?.contains(where: { $0.id == friend.id })) != nil) {
+            response.status = .badRequest
+            response.body = "Already a friend"
+            return response
         }
         
         if user.friends == nil {
             user.friends = []
         }
         
-        
-        let newFriend = Friend(id: friend.id)
+        let newFriend = Friend(id: friend.id, name: foundFriend.name)
         
         if let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
             user.friends?.append(newFriend)

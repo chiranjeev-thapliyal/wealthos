@@ -41,6 +41,7 @@ final class User: Model, Content {
 
 struct Friend: Codable {
     let id: UUID
+    let name: String?
 }
 
 struct LoginRequest: Codable {

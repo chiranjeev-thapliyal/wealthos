@@ -24,7 +24,7 @@ struct TransactionDetail: Content {
 final class Transaction: Model, Content {
     static let schema = "transactions"
     
-    @ID(custom: .id, generatedBy: .database)
+    @ID(key: .id)
     var id: UUID?
     
     @Parent(key: "created_by")
