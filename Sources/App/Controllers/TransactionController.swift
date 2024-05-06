@@ -36,7 +36,7 @@ struct TransactionController: RouteCollection {
         }
         
         return try await Transaction.query(on: req.db)
-            .filter(\.$creator.$id == userId)
+            .filter(\.$creator == userId)
             .all()
     }
 
@@ -49,8 +49,8 @@ struct TransactionController: RouteCollection {
         // Fetch all transactions involving the user
         let transactions = try await Transaction.query(on: req.db)
             .group(.or) { or in
-                or.filter(\.$creator.$id == userId)
-                or.filter(\.$creator.$id == friendId)
+                or.filter(\.$creator == userId)
+                or.filter(\.$creator == friendId)
             }
             .all()
         

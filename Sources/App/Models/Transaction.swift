@@ -27,8 +27,8 @@ final class Transaction: Model, Content {
     @ID(key: .id)
     var id: UUID?
     
-    @Parent(key: "created_by")
-    var creator: User
+    @Field(key: "created_by")
+    var creator: UUID
     
     @Field(key: "description")
     var description: String
@@ -41,9 +41,9 @@ final class Transaction: Model, Content {
     
     init() {}
     
-    init(id: UUID? = nil, creatorId: UUID, description: String, amount: Double, shares: [Share]) {
+    init(id: UUID? = nil, creator: UUID, description: String, amount: Double, shares: [Share]) {
         self.id = id
-        self.$creator.id = creatorId
+        self.creator = creator
         self.description = description
         self.amount = amount
         self.shares = shares
