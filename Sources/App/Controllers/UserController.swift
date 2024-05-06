@@ -42,9 +42,7 @@ class UserController: RouteCollection {
     }
     
     func createUser(req: Request) async throws -> User {
-        req.logger.info("Creating user with payload: \(req.content)")
         let user = try req.content.decode(User.self)
-        req.logger.info("Decoded user: \(user)")
         
         user.password = try await req.password.async.hash(user.password)
             

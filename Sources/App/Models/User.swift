@@ -12,7 +12,7 @@ import Fluent
 final class User: Model, Content {
     static let schema = "users"
     
-    @ID(custom: .id, generatedBy: .database)
+    @ID(key: .id)
     var id: UUID?
     
     @Field(key: "name")
@@ -24,12 +24,20 @@ final class User: Model, Content {
     @Field(key: "password")
     var password: String
     
-    // Ensure no default value is set here that Fluent might misinterpret
-    @Field(key: "friends")
+    @OptionalField(key: "friends")
     var friends: [Friend]?
     
     init() { }
+    
+    init(id: UUID? = nil, name: String, email: String, password: String, friends: [Friend]? = nil) {
+        self.id = id
+        self.name = name
+        self.email = email
+        self.password = password
+        self.friends = friends
+    }
 }
+
 
 struct Friend: Codable {
     let id: UUID
