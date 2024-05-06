@@ -23,10 +23,6 @@ struct TransactionController: RouteCollection {
     func addTransaction(req: Request) async throws -> Response {
         let response = Response(status: .ok)
         
-        guard let userId = req.parameters.get("userId") else {
-            throw Abort(.badRequest, reason: "Invalid user id")
-        }
-        
         let transaction = try req.content.decode(Transaction.self)
         
         try await transaction.save(on: req.db)
@@ -44,4 +40,36 @@ struct TransactionController: RouteCollection {
             .all()
     }
 
+    func getTransactionsWithFriend(req: Request) async throws -> [TransactionDetail] {
+        guard let userId = req.parameters.get("userId", as: UUID.self),
+              let friendId = req.parameters.get("friendId", as: UUID.self) else {
+            throw Abort(.badRequest, reason: "Invalid user or friend ID.")
+        }
+
+        // Fetch all transactions involving the user
+        let transactions = try await Transaction.query(on: req.db)
+            .group(.or) { or in
+                or.filter(\.$creator.$id == userId)
+                or.filter(\.$creator.$id == friendId)
+            }
+            .all()
+        
+        // Further filter in-memory to find transactions that also involve the friend
+        let relevantTransactions = transactions.filter { transaction in
+            let userInvolved = transaction.shares.contains(where: { $0.userId == userId })
+            let friendInvolved = transaction.shares.contains(where: { $0.userId == friendId })
+            return userInvolved && friendInvolved
+        }
+
+        // Map to detailed view that includes share info
+        return relevantTransactions.map { transaction in
+            TransactionDetail(
+                transaction: transaction,
+                userShare: transaction.shares.first(where: { $0.userId == userId }),
+                friendShare: transaction.shares.first(where: { $0.userId == friendId })
+            )
+        }
+    }
+
+    
 }

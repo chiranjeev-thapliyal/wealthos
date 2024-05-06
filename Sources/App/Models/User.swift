@@ -12,40 +12,27 @@ import Fluent
 final class User: Model, Content {
     static let schema = "users"
     
-    // Unique identifier for this User.
     @ID(custom: .id, generatedBy: .database)
     var id: UUID?
     
-    // The User's name.
     @Field(key: "name")
     var name: String
     
-    // The User's email.
     @Field(key: "email")
     var email: String
     
-    // The User's name.
     @Field(key: "password")
     var password: String
     
-    // User Friends
+    // Ensure no default value is set here that Fluent might misinterpret
     @Field(key: "friends")
-    var friends: [UUID]
+    var friends: [Friend]?
     
     init() { }
-
-    // Creates a new User with all properties set.
-    init(id: UUID? = nil, name: String, email: String, password: String) {
-        self.id = id
-        self.name = name
-        self.email = email
-        self.password = password
-    }
-    
 }
 
-struct FriendRequest: Content {
-    let friendId: UUID
+struct Friend: Codable {
+    let id: UUID
 }
 
 struct LoginRequest: Codable {

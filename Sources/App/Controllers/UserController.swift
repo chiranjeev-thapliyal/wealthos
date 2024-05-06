@@ -42,10 +42,11 @@ class UserController: RouteCollection {
     }
     
     func createUser(req: Request) async throws -> User {
+        req.logger.info("Creating user with payload: \(req.content)")
         let user = try req.content.decode(User.self)
-        let hashedPassword = try await req.password.async.hash(user.password)
+        req.logger.info("Decoded user: \(user)")
         
-        user.password = hashedPassword
+        user.password = try await req.password.async.hash(user.password)
             
         try await user.save(on: req.db)
         
@@ -84,19 +85,26 @@ class UserController: RouteCollection {
             throw Abort(.badRequest, reason: "Invalid userId")
         }
         
-        let friendRequest = try req.content.decode(FriendRequest.self)
+        let friend = try req.content.decode(Friend.self)
         
         guard let user = try await User.find(userId, on: req.db) else {
             throw Abort(.notFound, reason: "User not found")
         }
         
-        guard friendRequest.friendId != userId,
-                let _ = try await User.find(friendRequest.friendId, on: req.db) else {
+        guard friend.id != userId,
+                let _ = try await User.find(friend.id, on: req.db) else {
             throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
         }
         
-        if !user.friends.contains(friendRequest.friendId){
-            user.friends.append(friendRequest.friendId)
+        if user.friends == nil {
+            user.friends = []
+        }
+        
+        
+        let newFriend = Friend(id: friend.id)
+        
+        if let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
+            user.friends?.append(newFriend)
             try await user.save(on: req.db)
         }
         
@@ -105,26 +113,21 @@ class UserController: RouteCollection {
     
     
     func getUserFriends(req: Request) async throws -> Response {
+        guard let userId = req.parameters.get("userId", as: UUID.self),
+              let user = try await User.find(userId, on: req.db),
+              let friends = user.friends, !friends.isEmpty else {
+            return Response(status: .ok, body: .empty)
+        }
+
+        // Extract the UUIDs from the friends array
+        let friendUUIDs = friends.map { $0.id }
+
+        // Filter users based on extracted UUIDs
+        let friendUsers = try await User.query(on: req.db).filter(\.$id ~~ friendUUIDs).all()
         let response = Response(status: .ok)
-        
-        guard let userId = req.parameters.get("userId", as: UUID.self) else {
-            throw Abort(.badRequest, reason: "Invalid userId")
-        }
-        
-        guard let user = try await User.find(userId, on: req.db) else {
-            throw Abort(.notFound, reason: "User not found")
-        }
-        
-        guard !user.friends.isEmpty else {
-            response.body = .empty
-            return response
-        }
-        
-        let friends = try await User.query(on: req.db).filter(\.$id ~~ user.friends).all()
-        
-        try response.content.encode(friends)
-        
+        try response.content.encode(friendUsers)
         return response
     }
+
     
 }
