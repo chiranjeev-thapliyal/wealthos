@@ -64,11 +64,13 @@ class PublicUserInfo: Codable {
 }
 
 final class LoginResponse: Codable, Content {
+    let id: UUID
     let name: String
     let email: String
     let token: String
     
-    init(name: String, email: String, token: String) {
+    init(id: UUID, name: String, email: String, token: String) {
+        self.id = id
         self.name = name
         self.email = email
         self.token = token

@@ -61,7 +61,7 @@ class UserController: RouteCollection {
             
             let payload = TestPayload(subject: "accessToken", expiration: .init(value: .distantFuture), data: PublicUserInfo(name: user.name, email: user.email))
             let token = try req.jwt.sign(payload)
-            let responseData = LoginResponse(name: user.name, email: user.email, token: token)
+            let responseData = LoginResponse(id: user.id!, name: user.name, email: user.email, token: token)
             
             try response.content.encode(responseData)
             return response
@@ -96,7 +96,7 @@ class UserController: RouteCollection {
         if verify {
             let payload = TestPayload(subject: "accessToken", expiration: .init(value: .distantFuture), data: PublicUserInfo(name: user.name, email: user.email))
             let token = try req.jwt.sign(payload)
-            let response = LoginResponse(name: user.name, email: user.email, token: token)
+            let response = LoginResponse(id: user.id!, name: user.name, email: user.email, token: token)
             
             return response
         } else {
