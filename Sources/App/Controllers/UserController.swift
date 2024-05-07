@@ -156,12 +156,9 @@ class UserController: RouteCollection {
         }
 
         // Extract the UUIDs from the friends array
-        let friendUUIDs = friends.map { $0.id }
-
-        // Filter users based on extracted UUIDs
-        let friendUsers = try await User.query(on: req.db).filter(\.$id ~~ friendUUIDs).all()
         let response = Response(status: .ok)
-        try response.content.encode(friendUsers)
+        try response.content.encode(friends)
+        
         return response
     }
 

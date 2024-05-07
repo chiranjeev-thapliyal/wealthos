@@ -32,7 +32,7 @@ final class User: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, name: String, phoneNumber: String, email: String, password: String, friends: [Friend]? = nil) {
+    init(id: UUID? = nil, name: String, phoneNumber: String, email: String, password: String, friends: [Friend]? = nil, avatar: String) {
         self.id = id
         self.name = name
         self.phoneNumber = phoneNumber
@@ -40,10 +40,15 @@ final class User: Model, Content {
         self.password = password
         self.friends = friends
     }
+    
+    struct Public {
+        let id: UUID
+        let name: String
+    }
 }
 
 
-struct Friend: Codable {
+struct Friend: Codable, Content {
     let id: UUID
     let name: String?
 }
@@ -76,4 +81,3 @@ final class LoginResponse: Codable, Content {
         self.token = token
     }
 }
-
