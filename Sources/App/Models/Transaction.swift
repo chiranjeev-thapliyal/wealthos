@@ -12,6 +12,7 @@ import FluentMongoDriver
 
 struct Share: Codable {
     let userId: UUID
+    let userName: String
     let percentage: Double
 }
 
@@ -30,6 +31,9 @@ final class Transaction: Model, Content {
     @Field(key: "created_by")
     var creator: UUID
     
+    @Field(key: "creator_name")
+    var creatorName: String
+    
     @Field(key: "description")
     var description: String
     
@@ -41,9 +45,10 @@ final class Transaction: Model, Content {
     
     init() {}
     
-    init(id: UUID? = nil, creator: UUID, description: String, amount: Double, shares: [Share]) {
+    init(id: UUID? = nil, creator: UUID, creatorName: String, description: String, amount: Double, shares: [Share]) {
         self.id = id
         self.creator = creator
+        self.creatorName = creatorName
         self.description = description
         self.amount = amount
         self.shares = shares

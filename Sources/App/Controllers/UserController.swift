@@ -20,7 +20,6 @@ class UserController: RouteCollection {
         api.get("user", use: getAll)
         api.get("user", ":userId", use: getById)
         api.post("user", "login", use: login)
-        api.get("transactions", ":userId", use: getUserTransactions)
         api.get("user", ":userId", "friends", use: getUserFriends)
         api.post("users", ":userId", "friends", "add", use: addUserFriend)
         api.post("groups", use: createGroup)
@@ -105,11 +104,6 @@ class UserController: RouteCollection {
         } else {
             throw Abort(.unauthorized, reason: "Invalid credentials")
         }
-    }
-    
-    func getUserTransactions(req: Request) async throws -> Response {
-        let response = Response(status: .ok)
-        return response
     }
     
     func addUserFriend(req: Request) async throws -> Response {
