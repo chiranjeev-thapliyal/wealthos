@@ -25,6 +25,7 @@ class UserController: RouteCollection {
         api.post("users", ":userId", "friends", "add", use: addUserFriend)
         api.post("groups", use: createGroup)
         api.post("user", ":userId", "groups", "add", use: addUserToGroup)
+        api.get("user", ":userId", "groups", use: getUserGroups)
     }
     
     func getById(req: Request) async throws -> User {
@@ -234,6 +235,20 @@ class UserController: RouteCollection {
         // Extract the UUIDs from the friends array
         let response = Response(status: .ok)
         try response.content.encode(friends)
+        
+        return response
+    }
+    
+    func getUserGroups(req: Request) async throws -> Response {
+        guard let userId = req.parameters.get("userId", as: UUID.self),
+              let user = try await User.find(userId, on: req.db),
+              let groups = user.groups, !groups.isEmpty else {
+            return Response(status: .ok, body: .empty)
+        }
+
+        // Extract the UUIDs from the friends array
+        let response = Response(status: .ok)
+        try response.content.encode(groups)
         
         return response
     }
