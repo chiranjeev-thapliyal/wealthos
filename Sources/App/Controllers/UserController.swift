@@ -64,7 +64,6 @@ class UserController: RouteCollection {
             let responseData = LoginResponse(name: user.name, email: user.email, token: token)
             
             try response.content.encode(responseData)
-            
             return response
         } catch let error as DecodingError {
             response.status = .badRequest
