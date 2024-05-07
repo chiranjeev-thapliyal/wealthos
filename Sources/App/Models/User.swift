@@ -30,27 +30,25 @@ final class User: Model, Content {
     @OptionalField(key: "friends")
     var friends: [Friend]?
     
+    @OptionalField(key: "groups")
+    var groups: [Group]?
+    
     init() { }
     
-    init(id: UUID? = nil, name: String, phoneNumber: String, email: String, password: String, friends: [Friend]? = nil, avatar: String) {
+    init(id: UUID? = nil, name: String, phoneNumber: String, email: String, password: String, friends: [Friend]? = nil, groups: [Group]? = nil) {
         self.id = id
         self.name = name
         self.phoneNumber = phoneNumber
         self.email = email
         self.password = password
         self.friends = friends
+        self.groups = groups
     }
     
-    struct Public {
+    struct Public: Content, Codable {
         let id: UUID
         let name: String
     }
-}
-
-
-struct Friend: Codable, Content {
-    let id: UUID
-    let name: String?
 }
 
 struct LoginRequest: Codable {

@@ -23,6 +23,8 @@ class UserController: RouteCollection {
         api.get("transactions", ":userId", use: getUserTransactions)
         api.get("user", ":userId", "friends", use: getUserFriends)
         api.post("users", ":userId", "friends", "add", use: addUserFriend)
+        api.post("groups", use: createGroup)
+        api.post("user", ":userId", "groups", "add", use: addUserToGroup)
     }
     
     func getById(req: Request) async throws -> User {
@@ -142,6 +144,80 @@ class UserController: RouteCollection {
         if let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
             user.friends?.append(newFriend)
             try await user.save(on: req.db)
+        }
+        
+        return response
+    }
+    
+    func createGroup(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        
+        do {
+            let group = try req.content.decode(Group.self)
+            
+            try await group.save(on: req.db)
+            
+            if let members = group.members, let groupId = group.id {
+                for memberPublic in members {
+                    if let user = try await User.find(memberPublic.id, on: req.db) {
+                        var userGroups = user.groups ?? []
+                        let groupToAdd = Group(id: groupId, name: group.name, members: nil)
+                        userGroups.append(groupToAdd)
+                        user.groups = userGroups
+                        try await user.save(on: req.db)
+                    }
+                }
+            }
+            
+            try response.content.encode(group)
+            
+            return response
+        } catch {
+            response.status = .badRequest
+            try response.content.encode(ErrorResponse(error: true, reason: "Internal Server Error"))
+            return response
+        }
+    }
+    
+    func addUserToGroup(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        
+        do {
+            guard let userId = req.parameters.get("userId", as: UUID.self) else {
+                throw Abort(.badRequest, reason: "Invalid userId")
+            }
+            
+            let requestGroup = try req.content.decode(Group.self)
+            
+            guard let user = try await User.find(userId, on: req.db) else {
+                throw Abort(.notFound, reason: "User not found")
+            }
+            
+            guard let group = try await Group.find(requestGroup.id, on: req.db) else {
+                throw Abort(.notFound, reason: "Group not found")
+            }
+            
+            if ((user.groups?.contains(where: { $0.id == group.id })) != nil) {
+                response.status = .badRequest
+                response.body = "Already a group member"
+                return response
+            }
+            
+            if user.groups == nil {
+                user.groups = []
+            }
+            
+            user.groups?.append(group)
+            
+            group.members?.append(User.Public(id: user.id!, name: user.name))
+            
+            try await user.save(on: req.db)
+            try await group.save(on: req.db)
+            
+        } catch {
+            response.status = .badRequest
+            try response.content.encode(ErrorResponse(error: true, reason: "Internal Server Error"))
+            return response
         }
         
         return response
