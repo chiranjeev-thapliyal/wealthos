@@ -25,6 +25,7 @@ class UserController: RouteCollection {
         api.post("groups", use: createGroup)
         api.post("user", ":userId", "groups", "add", use: addUserToGroup)
         api.get("user", ":userId", "groups", use: getUserGroups)
+        api.delete("user", ":userId", use: removeUser)
     }
     
     func getById(req: Request) async throws -> User {
@@ -84,6 +85,24 @@ class UserController: RouteCollection {
             return response
         }
         
+    }
+    
+    func removeUser(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        
+        guard let userId = req.parameters.get("userId", as: UUID.self) else {
+            throw Abort(.notFound, reason: "User not found")
+        }
+        
+        guard let user = try await User.find(userId, on: req.db) else {
+            throw Abort(.notFound, reason: "User \(userId) not found")
+        }
+        
+        try await user.delete(on: req.db)
+        
+        try response.content.encode(["message": "User deleted successfully"])
+        
+        return response
     }
     
     func login(req: Request) async throws -> LoginResponse {
