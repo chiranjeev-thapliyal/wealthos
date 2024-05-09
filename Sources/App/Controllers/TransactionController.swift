@@ -17,13 +17,51 @@ struct TransactionController: RouteCollection {
         api.get("user", ":userId", "transactions", use: getTransactionsForUser)
         api.post("transactions", use: addTransaction)
         api.get("users", ":userId", "transactions", ":friendId", use: getTransactionsWithFriend)
+        api.get("transactions", "user", ":userId", "balance", use: getUserBalance)
     }
     
+    func getUserBalance(req: Request) async throws -> Response {
+        guard let userIdString = req.parameters.get("userId"),
+              let userId = UUID(uuidString: userIdString) else {
+            throw Abort(.badRequest, reason: "Invalid user ID")
+        }
+
+        // Fetch all transactions
+        let transactions = try await Transaction.query(on: req.db).all()
+
+        // Filter transactions containing the user's ID in the shares
+        let filteredTransactions = transactions.filter { transaction in
+            transaction.shares.contains(where: { $0.userId == userId })
+        }
+
+        // Calculate total balance owed by the user
+        var totalBalance: Double = 0.0
+
+        for transaction in filteredTransactions {
+            let userShare = transaction.shares.first { $0.userId == userId }
+            if let share = userShare {
+                let userAmount = transaction.amount * (share.percentage / 100.0)
+                let owedAmount = transaction.amount - userAmount
+                totalBalance += owedAmount
+            }
+        }
+
+        let response = Response(status: .ok)
+        try response.content.encode(["totalBalance": totalBalance])
+        
+        return response
+    
+    }
+
     
     func addTransaction(req: Request) async throws -> Response {
         let response = Response(status: .ok)
         
+        dump(req.body)
+        
         let transaction = try req.content.decode(Transaction.self)
+        
+        dump(transaction)
         
         try await transaction.save(on: req.db)
         
