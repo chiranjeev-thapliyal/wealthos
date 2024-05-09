@@ -9,6 +9,27 @@ import Foundation
 import Vapor
 import Fluent
 
+final class TemporaryUser: Model, Content {
+    static let schema = "temporaryUsers"
+    
+    @ID(key: .id)
+    var id: UUID?
+    
+    @Field(key: "phoneNumber")
+    var phoneNumber: String
+    
+    @Field(key: "name")
+    var name: String
+    
+    init() { }
+    
+    init(id: UUID? = nil, phoneNumber: String, name: String) {
+        self.id = id
+        self.phoneNumber = phoneNumber
+        self.name = name
+    }
+}
+
 final class User: Model, Content {
     static let schema = "users"
     

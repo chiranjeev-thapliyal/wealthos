@@ -70,6 +70,4 @@ struct TransactionController: RouteCollection {
             )
         }
     }
-
-    
 }

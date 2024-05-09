@@ -17,6 +17,7 @@ class UserController: RouteCollection {
         let api = routes
         
         api.post("user", use: createUser)
+        api.post("user", "temporary", use: createTemporaryUser)
         api.get("user", use: getAll)
         api.get("user", ":userId", use: getById)
         api.post("user", "login", use: login)
@@ -26,6 +27,19 @@ class UserController: RouteCollection {
         api.post("user", ":userId", "groups", "add", use: addUserToGroup)
         api.get("user", ":userId", "groups", use: getUserGroups)
         api.delete("user", ":userId", use: removeUser)
+        api.get("user", "phoneNumber", ":phoneNumber", use: getByPhoneNumber)
+    }
+    
+    func getByPhoneNumber(req: Request) async throws -> User {
+        guard let requestedPhoneNumber = req.parameters.get("phoneNumber") else {
+            throw Abort(.notAcceptable)
+        }
+        
+        guard let user = try await User.query(on: req.db).filter(\.$phoneNumber == requestedPhoneNumber).first() else {
+            throw Abort(.notFound, reason: "User \(requestedPhoneNumber) was not found")
+        }
+            
+        return user
     }
     
     func getById(req: Request) async throws -> User {
@@ -44,6 +58,30 @@ class UserController: RouteCollection {
         return try await User.query(on: req.db).all()
     }
     
+    func createTemporaryUser(req: Request) async throws -> Response {
+        let response = Response(status: .ok)
+        
+        do {
+            let user = try req.content.decode(TemporaryUser.self)
+            
+            let foundUser = try await TemporaryUser.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first()
+            
+            if let foundUser = foundUser {
+                try response.content.encode(foundUser)
+            } else {
+                try await user.save(on: req.db)
+                try response.content.encode(user)
+            }
+            
+            return response
+        } catch {
+            response.status = .internalServerError
+            let errorResponse = ErrorResponse(error: true, reason: "Internal Server Error: \(error.localizedDescription)")
+            try response.content.encode(errorResponse)
+            return response
+        }
+    }
+    
     func createUser(req: Request) async throws -> Response {
         let response = Response(status: .ok)
         
@@ -54,13 +92,25 @@ class UserController: RouteCollection {
                 throw Abort(.badRequest, reason: "A user with the same email already exists.")
             }
             
-            if try await User.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first() != nil {
+            let foundUser = try await User.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first()
+            
+            if foundUser != nil {
                 throw Abort(.badRequest, reason: "A user with the same phone number already exists.")
+            }
+            
+            let temporaryUser = try await TemporaryUser.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first()
+            
+            if let temporaryUser = temporaryUser {
+                user.id = temporaryUser.id
             }
             
             user.password = try await req.password.async.hash(user.password)
                 
             try await user.save(on: req.db)
+            
+            if let temporaryUser = temporaryUser {
+                try await temporaryUser.delete(on: req.db)
+            }
             
             let payload = TestPayload(subject: "accessToken", expiration: .init(value: .distantFuture), data: PublicUserInfo(name: user.name, email: user.email))
             let token = try req.jwt.sign(payload)
@@ -153,7 +203,7 @@ class UserController: RouteCollection {
             user.friends = []
         }
         
-        let newFriend = Friend(id: friend.id, name: foundFriend.name)
+        let newFriend = Friend(id: friend.id, name: foundFriend.name, phoneNumber: foundFriend.phoneNumber, email: foundFriend.email)
         
         if let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
             user.friends?.append(newFriend)
