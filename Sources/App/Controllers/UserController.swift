@@ -188,12 +188,18 @@ class UserController: RouteCollection {
             throw Abort(.notFound, reason: "User not found")
         }
         
-        guard friend.id != userId,
-                let foundFriend = try await User.find(friend.id, on: req.db) else {
+        guard friend.id != userId else {
             throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
         }
         
-        if ((user.friends?.contains(where: { $0.id == friend.id })) != nil) {
+        let foundRegisteredFriend = try await User.find(friend.id, on: req.db)
+        let foundTemporaryFriend = try await TemporaryUser.find(friend.id, on: req.db)
+        
+        if !(foundRegisteredFriend != nil) && !(foundTemporaryFriend != nil) {
+            throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
+        }
+        
+        if (user.friends?.contains(where: { $0.id == friend.id }) == true) {
             response.status = .badRequest
             response.body = "Already a friend"
             return response
@@ -203,9 +209,16 @@ class UserController: RouteCollection {
             user.friends = []
         }
         
-        let newFriend = Friend(id: friend.id, name: foundFriend.name, phoneNumber: foundFriend.phoneNumber, email: foundFriend.email)
+        var newFriend: Friend?
         
-        if let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
+        if foundRegisteredFriend != nil, let foundFriendId = foundRegisteredFriend?.id {
+            newFriend = Friend(id: foundFriendId, name: foundRegisteredFriend?.name, phoneNumber: foundRegisteredFriend?.phoneNumber, email: foundRegisteredFriend?.email)
+        } else if foundTemporaryFriend != nil, let foundFriendId = foundTemporaryFriend?.id {
+            newFriend = Friend(id: foundFriendId, name: foundTemporaryFriend?.name, phoneNumber: foundTemporaryFriend?.phoneNumber)
+        }
+        
+        
+        if let newFriend = newFriend, let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
             user.friends?.append(newFriend)
             try await user.save(on: req.db)
         }

@@ -12,5 +12,5 @@ struct Friend: Codable, Content {
     let id: UUID
     let name: String?
     let phoneNumber: String?
-    let email: String?
+    var email: String?
 }
