@@ -27,16 +27,16 @@ class UserController: RouteCollection {
         api.post("user", ":userId", "groups", "add", use: addUserToGroup)
         api.get("user", ":userId", "groups", use: getUserGroups)
         api.delete("user", ":userId", use: removeUser)
-        api.get("user", "phoneNumber", ":phoneNumber", use: getByPhoneNumber)
+        api.get("user", "email", ":email", use: getByEmail)
     }
     
-    func getByPhoneNumber(req: Request) async throws -> User {
-        guard let requestedPhoneNumber = req.parameters.get("phoneNumber") else {
+    func getByEmail(req: Request) async throws -> User {
+        guard let requestedEmail = req.parameters.get("email") else {
             throw Abort(.notAcceptable)
         }
         
-        guard let user = try await User.query(on: req.db).filter(\.$phoneNumber == requestedPhoneNumber).first() else {
-            throw Abort(.notFound, reason: "User \(requestedPhoneNumber) was not found")
+        guard let user = try await User.query(on: req.db).filter(\.$email == requestedEmail).first() else {
+            throw Abort(.notFound, reason: "User \(requestedEmail) was not found")
         }
             
         return user
@@ -64,7 +64,7 @@ class UserController: RouteCollection {
         do {
             let user = try req.content.decode(TemporaryUser.self)
             
-            let foundUser = try await TemporaryUser.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first()
+            let foundUser = try await TemporaryUser.query(on: req.db).filter(\.$email == user.email).first()
             
             if let foundUser = foundUser {
                 try response.content.encode(foundUser)
@@ -92,13 +92,13 @@ class UserController: RouteCollection {
                 throw Abort(.badRequest, reason: "A user with the same email already exists.")
             }
             
-            let foundUser = try await User.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first()
+            let foundUser = try await User.query(on: req.db).filter(\.$email == user.email).first()
             
             if foundUser != nil {
-                throw Abort(.badRequest, reason: "A user with the same phone number already exists.")
+                throw Abort(.badRequest, reason: "A user with the same email already exists.")
             }
             
-            let temporaryUser = try await TemporaryUser.query(on: req.db).filter(\.$phoneNumber == user.phoneNumber).first()
+            let temporaryUser = try await TemporaryUser.query(on: req.db).filter(\.$email == user.email).first()
             
             if let temporaryUser = temporaryUser {
                 user.id = temporaryUser.id
@@ -212,9 +212,9 @@ class UserController: RouteCollection {
         var newFriend: Friend?
         
         if foundRegisteredFriend != nil, let foundFriendId = foundRegisteredFriend?.id {
-            newFriend = Friend(id: foundFriendId, name: foundRegisteredFriend?.name, phoneNumber: foundRegisteredFriend?.phoneNumber, email: foundRegisteredFriend?.email)
+            newFriend = Friend(id: foundFriendId, name: foundRegisteredFriend?.name, email: foundRegisteredFriend?.email)
         } else if foundTemporaryFriend != nil, let foundFriendId = foundTemporaryFriend?.id {
-            newFriend = Friend(id: foundFriendId, name: foundTemporaryFriend?.name, phoneNumber: foundTemporaryFriend?.phoneNumber)
+            newFriend = Friend(id: foundFriendId, name: foundTemporaryFriend?.name, email: foundTemporaryFriend?.email)
         }
         
         

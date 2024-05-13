@@ -15,17 +15,17 @@ final class TemporaryUser: Model, Content {
     @ID(key: .id)
     var id: UUID?
     
-    @Field(key: "phoneNumber")
-    var phoneNumber: String
+    @Field(key: "email")
+    var email: String
     
     @Field(key: "name")
     var name: String
     
     init() { }
     
-    init(id: UUID? = nil, phoneNumber: String, name: String) {
+    init(id: UUID? = nil, email: String, name: String) {
         self.id = id
-        self.phoneNumber = phoneNumber
+        self.email = email
         self.name = name
     }
 }
@@ -38,9 +38,6 @@ final class User: Model, Content {
     
     @Field(key: "name")
     var name: String
-    
-    @Field(key: "phoneNumber")
-    var phoneNumber: String
     
     @Field(key: "email")
     var email: String
@@ -56,10 +53,10 @@ final class User: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, name: String, phoneNumber: String, email: String, password: String, friends: [Friend]? = nil, groups: [Group]? = nil) {
+    init(id: UUID? = nil, name: String, email: String, password: String, friends: [Friend]? = nil, groups: [Group]? = nil) {
         self.id = id
         self.name = name
-        self.phoneNumber = phoneNumber
+//        self.phoneNumber = phoneNumber
         self.email = email
         self.password = password
         self.friends = friends

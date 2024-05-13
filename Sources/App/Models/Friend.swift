@@ -11,6 +11,5 @@ import Vapor
 struct Friend: Codable, Content {
     let id: UUID
     let name: String?
-    let phoneNumber: String?
     var email: String?
 }
