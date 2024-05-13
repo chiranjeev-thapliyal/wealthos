@@ -200,9 +200,7 @@ class UserController: RouteCollection {
         }
         
         if (user.friends?.contains(where: { $0.id == friend.id }) == true) {
-            response.status = .badRequest
-            response.body = "Already a friend"
-            return response
+            throw Abort(.badRequest, reason: "Already a friend")
         }
         
         if user.friends == nil {
