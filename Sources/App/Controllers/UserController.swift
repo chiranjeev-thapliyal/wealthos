@@ -176,52 +176,57 @@ class UserController: RouteCollection {
     }
     
     func addUserFriend(req: Request) async throws -> Response {
-        let response = Response(status: .ok)
-        
         guard let userId = req.parameters.get("userId", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Invalid userId")
         }
         
         let friend = try req.content.decode(Friend.self)
         
+        guard friend.id != userId else {
+            throw Abort(.badRequest, reason: "Cannot add oneself as a friend.")
+        }
+        
         guard let user = try await User.find(userId, on: req.db) else {
             throw Abort(.notFound, reason: "User not found")
         }
         
-        guard friend.id != userId else {
+        // Retrieve registered or temporary friend
+        let foundFriend = try await findFriend(friendId: friend.id, on: req.db)
+        
+        guard let newFriend = foundFriend else {
             throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
         }
         
-        let foundRegisteredFriend = try await User.find(friend.id, on: req.db)
-        let foundTemporaryFriend = try await TemporaryUser.find(friend.id, on: req.db)
-        
-        if !(foundRegisteredFriend != nil) && !(foundTemporaryFriend != nil) {
-            throw Abort(.badRequest, reason: "Invalid friend ID or friend not found.")
-        }
-        
-        if (user.friends?.contains(where: { $0.id == friend.id }) == true) {
+        // Check if they are already friends
+        if user.friends?.contains(where: { $0.id == newFriend.id }) == true {
             throw Abort(.badRequest, reason: "Already a friend")
         }
         
+        // Add new friend if not already in the list
         if user.friends == nil {
             user.friends = []
         }
         
-        var newFriend: Friend?
+        user.friends?.append(newFriend)
+        try await user.save(on: req.db)
         
-        if foundRegisteredFriend != nil, let foundFriendId = foundRegisteredFriend?.id {
-            newFriend = Friend(id: foundFriendId, name: foundRegisteredFriend?.name, email: foundRegisteredFriend?.email)
-        } else if foundTemporaryFriend != nil, let foundFriendId = foundTemporaryFriend?.id {
-            newFriend = Friend(id: foundFriendId, name: foundTemporaryFriend?.name, email: foundTemporaryFriend?.email)
-        }
-        
-        
-        if let newFriend = newFriend, let friends = user.friends, !friends.contains(where: { $0.id == newFriend.id }) {
-            user.friends?.append(newFriend)
-            try await user.save(on: req.db)
-        }
-        
+        let response = Response(status: .ok)
+        try response.content.encode(newFriend)
         return response
+    }
+    
+    private func findFriend(friendId: UUID, on db: Database) async throws -> Friend? {
+        if let registeredFriend = try await User.find(friendId, on: db),
+           let id = registeredFriend.id {  // Safely unwrap `id`
+            return Friend(id: id, name: registeredFriend.name, email: registeredFriend.email)
+        }
+        
+        if let temporaryFriend = try await TemporaryUser.find(friendId, on: db),
+           let id = temporaryFriend.id {  // Safely unwrap `id`
+            return Friend(id: id, name: temporaryFriend.name, email: temporaryFriend.email)
+        }
+        
+        return nil
     }
     
     func createGroup(req: Request) async throws -> Response {

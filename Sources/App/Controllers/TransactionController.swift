@@ -57,11 +57,7 @@ struct TransactionController: RouteCollection {
     func addTransaction(req: Request) async throws -> Response {
         let response = Response(status: .ok)
         
-        dump(req.body)
-        
         let transaction = try req.content.decode(Transaction.self)
-        
-        dump(transaction)
         
         try await transaction.save(on: req.db)
         
