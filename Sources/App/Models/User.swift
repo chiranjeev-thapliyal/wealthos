@@ -45,6 +45,9 @@ final class User: Model, Content {
     @Field(key: "password")
     var password: String
     
+    @Field(key: "avatar")
+    var avatar: String
+    
     @OptionalField(key: "friends")
     var friends: [Friend]?
     
@@ -53,12 +56,13 @@ final class User: Model, Content {
     
     init() { }
     
-    init(id: UUID? = nil, name: String, email: String, password: String, friends: [Friend]? = nil, groups: [Group]? = nil) {
+    init(id: UUID? = nil, name: String, email: String, password: String, avatar: String, friends: [Friend]? = nil, groups: [Group]? = nil) {
         self.id = id
         self.name = name
 //        self.phoneNumber = phoneNumber
         self.email = email
         self.password = password
+        self.avatar = avatar
         self.friends = friends
         self.groups = groups
     }
@@ -89,11 +93,13 @@ final class LoginResponse: Codable, Content {
     let name: String
     let email: String
     let token: String
+    let avatar: String
     
-    init(id: UUID, name: String, email: String, token: String) {
+    init(id: UUID, name: String, email: String, token: String, avatar: String) {
         self.id = id
         self.name = name
         self.email = email
         self.token = token
+        self.avatar = avatar
     }
 }
